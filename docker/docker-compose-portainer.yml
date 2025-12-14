@@ -1,0 +1,120 @@
+# ============================================================
+# TrendRadar - Portainer 部署專用 Docker Compose
+# ============================================================
+#
+#  快速部署（無需上傳任何文件）：
+#   1. 在 Portainer 中：Stacks → Add stack
+#   2. 貼上此文件內容
+#   3. 設定環境變數（如 TELEGRAM_BOT_TOKEN）
+#   4. Deploy！
+#
+# 📁 配置文件說明：
+#   - 首次啟動會自動使用內建預設配置
+#   - 如需自訂配置，可掛載 volume 覆蓋
+#   - 敏感資訊建議通過環境變數設定
+#
+# ============================================================
+
+services:
+  trend-radar:
+    image: wantcat/trendradar:latest
+    container_name: trend-radar
+    restart: unless-stopped
+
+    ports:
+      # Web 服務器端口（如需外部訪問，移除 127.0.0.1）
+      - "8080:8080"
+
+    volumes:
+      # 📂 config 目錄（可選）：不掛載則使用內建預設配置
+      # - /opt/trendradar/config:/app/config
+      # 📂 output 目錄：儲存爬取結果（建議掛載以持久化）
+      - trendradar_output:/app/output
+
+    environment:
+      # 時區設定
+      - TZ=Asia/Shanghai
+
+      # ==================== 運行模式 ====================
+      # cron: 定時執行（預設）
+      # once: 只執行一次
+      - RUN_MODE=cron
+      # Cron 表達式（預設每 30 分鐘執行一次）
+      - CRON_SCHEDULE=*/30 * * * *
+      # 容器啟動時是否立即執行一次
+      - IMMEDIATE_RUN=true
+
+      # ==================== 核心配置 ====================
+      # 是否啟用爬蟲（留空使用 config.yaml 設定）
+      - ENABLE_CRAWLER=
+      # 是否啟用通知（留空使用 config.yaml 設定）
+      - ENABLE_NOTIFICATION=
+      # 報告模式：daily / incremental / current
+      - REPORT_MODE=
+      # 排序優先級：true=先按配置位置，false=先按熱點數量
+      - SORT_BY_POSITION_FIRST=
+      # 每個關鍵詞最大新聞數（0=不限制）
+      - MAX_NEWS_PER_KEYWORD=
+      # 內容順序：true=新增在前，false=統計在前
+      - REVERSE_CONTENT_ORDER=
+
+      # ==================== Web 服務器 ====================
+      - ENABLE_WEBSERVER=false
+      - WEBSERVER_PORT=8080
+
+      # ==================== 推送時間窗口 ====================
+      - PUSH_WINDOW_ENABLED=
+      - PUSH_WINDOW_START=
+      - PUSH_WINDOW_END=
+      - PUSH_WINDOW_ONCE_PER_DAY=
+      - PUSH_WINDOW_RETENTION_DAYS=
+
+      # ==================== 通知渠道配置 ====================
+      # 💡 提示：敏感資訊建議在 Portainer 的 Environment variables 中設定
+      #
+      # Telegram
+      - TELEGRAM_BOT_TOKEN=
+      - TELEGRAM_CHAT_ID=
+      # 飛書
+      - FEISHU_WEBHOOK_URL=
+      # 釘釘
+      - DINGTALK_WEBHOOK_URL=
+      # 企業微信
+      - WEWORK_WEBHOOK_URL=
+      - WEWORK_MSG_TYPE=markdown
+      # 郵件
+      - EMAIL_FROM=
+      - EMAIL_PASSWORD=
+      - EMAIL_TO=
+      - EMAIL_SMTP_SERVER=
+      - EMAIL_SMTP_PORT=
+      # ntfy
+      - NTFY_SERVER_URL=https://ntfy.sh
+      - NTFY_TOPIC=
+      - NTFY_TOKEN=
+      # Bark
+      - BARK_URL=
+      # Slack
+      - SLACK_WEBHOOK_URL=
+
+      # 每個渠道最大帳號數量
+      - MAX_ACCOUNTS_PER_CHANNEL=
+
+    # 健康檢查
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "supercronic|python"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # 日誌限制
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Docker 命名卷（自動管理，無需手動創建目錄）
+volumes:
+  trendradar_output:

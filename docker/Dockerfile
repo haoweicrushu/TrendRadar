@@ -56,6 +56,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 COPY docker/manage.py .
 
+# 复制默认配置文件（作为模板）
+COPY config/config.yaml /app/config.default/config.yaml
+COPY config/frequency_words.txt /app/config.default/frequency_words.txt
+
 # 复制 entrypoint.sh 并强制转换为 LF 格式
 COPY docker/entrypoint.sh /entrypoint.sh.tmp
 RUN sed -i 's/\r$//' /entrypoint.sh.tmp && \

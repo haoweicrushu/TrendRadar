@@ -1,11 +1,18 @@
 #!/bin/bash
 set -e
 
-# 检查配置文件
-if [ ! -f "/app/config/config.yaml" ] || [ ! -f "/app/config/frequency_words.txt" ]; then
-    echo "❌ 配置文件缺失"
-    exit 1
+# 自动初始化配置文件（如果不存在）
+if [ ! -f "/app/config/config.yaml" ]; then
+    echo "📋 未检测到 config.yaml，使用默认配置..."
+    cp /app/config.default/config.yaml /app/config/config.yaml
 fi
+
+if [ ! -f "/app/config/frequency_words.txt" ]; then
+    echo "📋 未检测到 frequency_words.txt，使用默认配置..."
+    cp /app/config.default/frequency_words.txt /app/config/frequency_words.txt
+fi
+
+echo "✅ 配置文件就绪"
 
 # 保存环境变量
 env >> /etc/environment
